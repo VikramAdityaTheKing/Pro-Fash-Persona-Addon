@@ -16,7 +16,7 @@
             "type": "panel",
             "id": "panel1",
             "main": "index.html",
-            "documentSandbox": "sandbox/code.js"
+            "documentSandbox": "sandbox/code.js",
             "permissions": {
                 "camera": "*",
                 "microphone": "*"
