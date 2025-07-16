@@ -6,7 +6,7 @@ import addOnUISdk from "https://new.express.adobe.com/static/add-on-sdk/sdk.js";
 addOnUISdk.ready.then(async () => {
     console.log("Adobe Express Add-on SDK is ready for use!");
 
-    // Get references to HTML elements (these should be available in your index.html)
+    // Get references to HTML elements
     const videoElement = document.getElementById('videoElement');
     const suitOverlayImg = document.getElementById('suitOverlayImg');
     const canvasOutput = document.getElementById('canvasOutput');
@@ -18,6 +18,8 @@ addOnUISdk.ready.then(async () => {
     // UI elements
     const suitSelector = document.getElementById('suitSelector');
     const flipBtn = document.getElementById('flipBtn');
+    const scaleSlider = document.getElementById('scaleSlider'); // New slider
+    const yOffsetSlider = document.getElementById('yOffsetSlider'); // New slider
     const takeSnapshotBtn = document.getElementById('takeSnapshotBtn');
     const startRecordingBtn = document.getElementById('startRecordingBtn');
     const stopRecordingBtn = document.getElementById('stopRecordingBtn');
@@ -26,52 +28,54 @@ addOnUISdk.ready.then(async () => {
     const stopTranscriptionBtn = document.getElementById('stopTranscriptionBtn');
     const transcriptNotes = document.getElementById('transcriptNotes');
 
-    let currentSuitImage = null; // To hold the loaded Image object of the suit
-    let isFlipped = false;       // State for horizontal flip of video/suit
-    let recordedChunks = [];     // For MediaRecorder
+    let currentSuitImage = null;
+    let isFlipped = false;
+    let videoScale = parseFloat(scaleSlider.value); // Initial scale from slider
+    let videoYOffset = parseFloat(yOffsetSlider.value); // Initial Y offset from slider
+    let recordedChunks = [];
     let mediaRecorder;
-    let recognition;             // For Web Speech API (declared here to be accessible throughout)
+    let recognition;
+    let isRecording = false;
 
-    // --- Suit Image URLs (Using LOCAL RELATIVE PATHS) ---
-    // These paths point to the 'assets/suits' folder within your local project.
-    // Ensure your transparent PNGs are correctly placed there!
+    // --- Suit Image URLs (USING GITHUB RAW URLs for reliability) ---
+    // Ensure these URLs are correct and point to your public GitHub raw files.
+    // Replace 'my-final-addon/main/' with 'adobe_express_professional_persona_addon/adobe_virtual_professional_persona_creator/'
+    // if you are using that older repo for assets.
     const suitImageUrls = {
-        male_sitting: 'assets/suits/male_suit_sitting.png',
-        male_standing: 'assets/suits/male_suit_standing.png',
-        female_sitting: 'assets/suits/female_suit_sitting.png',
-        female_standing: 'assets/suits/female_suit_standing.png',
+        male_sitting: 'https://raw.githubusercontent.com/VikramAdityaTheKing/my-final-addon/main/assets/suits/male_suit_sitting.png',
+        male_standing: 'https://raw.githubusercontent.com/VikramAdityaTheKing/my-final-addon/main/assets/suits/male_suit_standing.png',
+        female_sitting: 'https://raw.githubusercontent.com/VikramAdityaTheKing/my-final-addon/main/assets/suits/female_suit_sitting.png',
+        female_standing: 'https://raw.githubusercontent.com/VikramAdityaTheKing/my-final-addon/main/assets/suits/female_suit_standing.png',
     };
 
     // --- Core Webcam Access ---
     async function startWebcam() {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true }); // Request audio too
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             videoElement.srcObject = stream;
             videoElement.play();
             console.log("Webcam stream started.");
 
-            // Set canvas sizes matching video dimensions once video metadata is loaded
             videoElement.addEventListener('loadedmetadata', () => {
                 canvasOutput.width = videoElement.videoWidth;
                 canvasOutput.height = videoElement.videoHeight;
                 snapshotCanvas.width = videoElement.videoWidth;
                 snapshotCanvas.height = videoElement.videoHeight;
-                startDrawingLoop(); // Start the continuous drawing loop
+                startDrawingLoop();
             });
 
         } catch (err) {
             console.error("Error accessing webcam: ", err);
-            alert("Unable to access webcam. Please ensure it's connected and permissions are granted.");
+            alert("Unable to access webcam. Please ensure it's connected and permissions are granted in manifest.json.");
         }
     }
 
     // --- Continuous Drawing Loop (Compositing) ---
     function startDrawingLoop() {
         function drawFrame() {
-            ctx.clearRect(0, 0, canvasOutput.width, canvasOutput.height); // Always clear the canvas before drawing a new frame
-            ctx.save(); // Save context state before any transformations
+            ctx.clearRect(0, 0, canvasOutput.width, canvasOutput.height);
+            ctx.save();
 
-            // Apply global flip if needed
             if (isFlipped) {
                 ctx.translate(canvasOutput.width, 0);
                 ctx.scale(-1, 1);
@@ -81,40 +85,41 @@ addOnUISdk.ready.then(async () => {
 
             // 1. Draw the professional suit image (background)
             if (currentSuitImage && currentSuitImage.complete) {
-                // Draw suit to fill the canvas, maintaining aspect ratio.
                 const suitAspect = currentSuitImage.width / currentSuitImage.height;
                 const canvasAspect = canvasOutput.width / canvasOutput.height;
 
                 let drawWidth, drawHeight, drawX, drawY;
 
-                // Fit suit to canvas (cover or contain based on preference)
-                if (suitAspect > canvasAspect) { // Suit is wider than canvas
+                if (suitAspect > canvasAspect) {
                     drawHeight = canvasOutput.height;
                     drawWidth = drawHeight * suitAspect;
-                    drawX = (canvasOutput.width - drawWidth) / 2; // Center horizontally
+                    drawX = (canvasOutput.width - drawWidth) / 2;
                     drawY = 0;
-                } else { // Suit is taller than canvas
+                } else {
                     drawWidth = canvasOutput.width;
                     drawHeight = drawWidth / suitAspect;
                     drawX = 0;
-                    drawY = (canvasOutput.height - drawHeight) / 2; // Center vertically
+                    drawY = (canvasOutput.height - drawHeight) / 2;
                 }
                 ctx.drawImage(currentSuitImage, drawX, drawY, drawWidth, drawHeight);
 
             } else {
-                // If no suit selected, draw a neutral background
-                ctx.fillStyle = '#f0f0f0'; // Light grey
+                ctx.fillStyle = '#f0f0f0';
                 ctx.fillRect(0, 0, canvasOutput.width, canvasOutput.height);
             }
 
-            // 2. Draw the live webcam feed (foreground)
-            // User will manually align their face by physically moving to fit the suit opening.
-            ctx.drawImage(videoElement, 0, 0, canvasOutput.width, canvasOutput.height);
+            // 2. Draw the live webcam feed (foreground) with scale and offset
+            const videoDrawWidth = videoElement.videoWidth * videoScale;
+            const videoDrawHeight = videoElement.videoHeight * videoScale;
+            const videoDrawX = (canvasOutput.width - videoDrawWidth) / 2; // Center horizontally
+            const videoDrawY = (canvasOutput.height - videoDrawHeight) / 2 + videoYOffset; // Center vertically + offset
 
-            ctx.restore(); // Restore context state (important for flip and other transformations)
-            requestAnimationFrame(drawFrame); // Continue the loop
+            ctx.drawImage(videoElement, videoDrawX, videoDrawY, videoDrawWidth, videoDrawHeight);
+
+            ctx.restore();
+            requestAnimationFrame(drawFrame);
         }
-        requestAnimationFrame(drawFrame); // Start the loop
+        requestAnimationFrame(drawFrame);
     }
 
     // --- UI Control Logic ---
@@ -124,6 +129,7 @@ addOnUISdk.ready.then(async () => {
         const selectedSuitKey = event.target.value;
         if (selectedSuitKey && suitImageUrls[selectedSuitKey]) {
             const img = new Image();
+            img.crossOrigin = "anonymous"; // Essential for images from other domains to be drawn on canvas
             img.src = suitImageUrls[selectedSuitKey];
             img.onload = () => {
                 currentSuitImage = img;
@@ -145,6 +151,19 @@ addOnUISdk.ready.then(async () => {
         console.log("Display flipped:", isFlipped);
     });
 
+    // Scale Slider
+    scaleSlider.addEventListener('input', (event) => {
+        videoScale = parseFloat(event.target.value);
+        console.log("Video scale:", videoScale);
+    });
+
+    // Y Offset Slider
+    yOffsetSlider.addEventListener('input', (event) => {
+        videoYOffset = parseFloat(event.target.value);
+        console.log("Video Y Offset:", videoYOffset);
+    });
+
+
     // --- Snapshot Functionality ---
     takeSnapshotBtn.addEventListener('click', () => {
         if (!videoElement.srcObject || !currentSuitImage) {
@@ -160,6 +179,7 @@ addOnUISdk.ready.then(async () => {
 
         window.lastSnapshotDataUrl = imageDataUrl;
         alert("Snapshot taken! Ready to add to Express.");
+        addMediaToExpressBtn.disabled = false;
     });
 
 
@@ -169,10 +189,11 @@ addOnUISdk.ready.then(async () => {
             alert("Webcam not active for recording.");
             return;
         }
+        isRecording = true;
         recordedChunks = [];
         const combinedStream = new MediaStream([
-            canvasOutput.captureStream().getVideoTracks()[0], // Captures the composite video
-            videoElement.srcObject.getAudioTracks()[0]       // Original audio from webcam
+            canvasOutput.captureStream().getVideoTracks()[0],
+            videoElement.srcObject.getAudioTracks()[0]
         ]);
 
         mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm' });
@@ -184,6 +205,7 @@ addOnUISdk.ready.then(async () => {
         };
 
         mediaRecorder.onstop = () => {
+            isRecording = false;
             const blob = new Blob(recordedChunks, { type: 'video/webm' });
             console.log("Recording stopped. Blob size:", blob.size);
             window.lastRecordedVideoBlob = blob;
@@ -191,6 +213,12 @@ addOnUISdk.ready.then(async () => {
             startRecordingBtn.disabled = false;
             stopRecordingBtn.disabled = true;
             addMediaToExpressBtn.disabled = false;
+            // Stop transcription if it was started simultaneously
+            if (recognition && recognition.continuous && recognition.state !== 'inactive') {
+                recognition.stop();
+                startTranscriptionBtn.disabled = false;
+                stopTranscriptionBtn.disabled = true;
+            }
         };
 
         mediaRecorder.start();
@@ -198,6 +226,15 @@ addOnUISdk.ready.then(async () => {
         startRecordingBtn.disabled = true;
         stopRecordingBtn.disabled = false;
         addMediaToExpressBtn.disabled = true;
+
+        // --- Start Voice Notes simultaneously with recording ---
+        if (recognition && recognition.state !== 'listening') { // Only start if not already listening
+            transcriptNotes.value = '';
+            recognition.start();
+            console.log("Speech recognition started simultaneously.");
+            startTranscriptionBtn.disabled = true;
+            stopTranscriptionBtn.disabled = false;
+        }
     });
 
     stopRecordingBtn.addEventListener('click', () => {
@@ -231,22 +268,25 @@ addOnUISdk.ready.then(async () => {
         recognition.addEventListener('error', (event) => {
             console.error('Speech recognition error:', event.error);
             transcriptNotes.value += "\n(Speech recognition error. Please try again.)";
-            startTranscriptionBtn.disabled = false;
-            stopTranscriptionBtn.disabled = true;
+            // Re-enable buttons if transcription stops on error and not recording video
+            if (!isRecording) {
+                startTranscriptionBtn.disabled = false;
+                stopTranscriptionBtn.disabled = true;
+            }
         });
 
-        // Start/Stop for Voice Notes (will be called automatically with recording too)
+        // Manual Start/Stop for Voice Notes (separate from video recording)
         startTranscriptionBtn.addEventListener('click', () => {
             transcriptNotes.value = '';
             recognition.start();
-            console.log("Speech recognition started.");
+            console.log("Speech recognition started manually.");
             startTranscriptionBtn.disabled = true;
             stopTranscriptionBtn.disabled = false;
         });
 
         stopTranscriptionBtn.addEventListener('click', () => {
             recognition.stop();
-            console.log("Speech recognition stopped.");
+            console.log("Speech recognition stopped manually.");
             startTranscriptionBtn.disabled = false;
             stopTranscriptionBtn.disabled = true;
         });
@@ -259,8 +299,8 @@ addOnUISdk.ready.then(async () => {
     // --- Add Media to Express Functionality ---
     addMediaToExpressBtn.addEventListener('click', async () => {
         try {
-            // Access SDK objects from window.addonsdk.app
-            const { document, asset } = addOnUISdk.instance.document;
+            // Access SDK objects from addOnUISdk.instance (this is the standard path in SDK)
+            const { document, asset } = addOnUISdk.instance;
 
             // Add Snapshot Image
             if (window.lastSnapshotDataUrl) {
@@ -289,6 +329,5 @@ addOnUISdk.ready.then(async () => {
         }
     });
 
-    // --- Initial setup calls ---
     startWebcam(); // Start the webcam initially
 }); // Close of addOnUISdk.ready.then() wrapper
