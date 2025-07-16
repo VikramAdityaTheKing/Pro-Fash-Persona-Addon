@@ -22,5 +22,12 @@
                 "microphone": "*"
             }
         }
+    ],
+     "resources": [  
+        {
+            "files": [
+                "assets/**/*" 
+            ]
+        }
     ]
 }
