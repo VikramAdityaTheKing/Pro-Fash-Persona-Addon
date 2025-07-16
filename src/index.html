@@ -1,51 +1,98 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta
-            name="description"
-            content="Get started with Add-on development using JavaScript with Document Sandbox Runtime"
-        />
-        <meta name="keywords" content="Adobe, Express, Add-On, JavaScript, Document Sandbox Runtime" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Get Started</title>
-        <style>
-            .container {
-                margin: 24px;
-                display: flex;
-                flex-direction: column;
-            }
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="Profeshh! - Professional Persona Recorder Adobe Express Add-on" />
+    <meta name="keywords" content="Adobe, Express, Add-On, JavaScript, Webcam, Persona, Video" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Persona Frame & Recorder</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; }
+        #canvasContainer {
+            position: relative; /* For positioning control panel over canvas */
+            width: 100%;
+            max-height: 60%; /* Adjust as needed */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #ccc;
+            background-color: #f0f0f0;
+        }
+        #canvasOutput {
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+        }
+        #videoElement { display: none; } /* Raw video is hidden, used as source for canvas */
+        #suitOverlayImg { display: none; } /* Suit image is hidden, used as source for canvas */
+        #snapshotCanvas { display: none; } /* Hidden canvas for taking snapshots */
 
-            button {
-                background-color: rgb(82, 88, 228);
-                border-color: rgb(82, 88, 228);
-                border-radius: 16px;
-                border-style: solid;
-                color: rgb(255, 255, 255);
-                font-family: sans-serif;
-                height: 32px;
-            }
+        #controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 10px;
+            background: #eee;
+            align-items: center; /* Vertically align items */
+            gap: 10px; /* Space between controls */
+        }
+        #controls button, #controls select, #controls input[type="range"] {
+            margin: 0; /* Remove default margin */
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        #controls label {
+            font-size: 0.85em;
+            margin-right: 5px;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 5px;
+        }
 
-            button:disabled {
-                background-color: rgb(177, 177, 177);
-                border-color: rgb(177, 177, 177);
-            }
+        #notesContainer { flex-grow: 1; padding: 10px; display: flex; flex-direction: column; }
+        #transcriptNotes { width: 98%; flex-grow: 1; border: 1px solid #ccc; padding: 5px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div id="canvasContainer">
+        <canvas id="canvasOutput"></canvas>
+    </div>
 
-            button:not([disabled]):hover {
-                background-color: rgb(64, 70, 202);
-                cursor: pointer;
-            }
-        </style>
-    </head>
-    <body>
-        <!-- 
-            Please note that this document does not use the spectrum web components theme for Express.
-            You may use "addOnUISdk.app.ui.theme" to get the current theme and style accordingly.
-        -->
-        <div class="container">
-            <button id="createRectangle" disabled>Create Rectangle</button>
+    <video id="videoElement" autoplay playsinline></video>
+    <img id="suitOverlayImg" src="" alt="Professional Suit"> <canvas id="snapshotCanvas"></canvas> <div id="controls">
+        <select id="suitSelector">
+            <option value="">Select Suit</option>
+            <option value="male_sitting">Male Sitting</option>
+            <option value="male_standing">Male Standing</option>
+            <option value="female_sitting">Female Sitting</option>
+            <option value="female_standing">Female Standing</option>
+        </select>
+        <button id="flipBtn">Flip Direction</button>
+
+        <div class="control-group">
+            <label for="scaleSlider">Scale Face</label>
+            <input type="range" id="scaleSlider" min="0.5" max="1.5" step="0.01" value="1.0">
+        </div>
+        <div class="control-group">
+            <label for="yOffsetSlider">Y Offset</label>
+            <input type="range" id="yOffsetSlider" min="-100" max="100" step="1" value="0">
         </div>
 
-        <script type="module" src="ui/index.js"></script>
-    </body>
+        <button id="takeSnapshotBtn">Take Snapshot</button>
+        <button id="startRecordingBtn">Start Record</button>
+        <button id="stopRecordingBtn" disabled>Stop Record</button>
+        <button id="addMediaToExpressBtn">Add Media to Express</button>
+        <button id="startTranscriptionBtn">Start Voice Notes</button>
+        <button id="stopTranscriptionBtn" disabled>Stop Voice Notes</button>
+    </div>
+    <div id="notesContainer">
+        <h3>Voice Notes:</h3>
+        <textarea id="transcriptNotes" placeholder="Transcription will appear here..." contenteditable="true"></textarea>
+    </div>
+
+    <script type="module" src="ui/index.js"></script> 
+</body>
 </html>
