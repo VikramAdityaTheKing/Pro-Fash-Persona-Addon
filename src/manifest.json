@@ -1,6 +1,6 @@
 {
     "testId": "f5e95c79-ffa2-4e23-8812-3226b21ea7ac",
-    "name": "My Final Addon",
+    "name": "ProFash Persona Addon",
     "version": "1.0.0",
     "manifestVersion": 2,
     "requirements": {
@@ -16,7 +16,18 @@
             "type": "panel",
             "id": "panel1",
             "main": "index.html",
-            "documentSandbox": "sandbox/code.js"
+            "documentSandbox": "sandbox/code.js",
+            "permissions": {
+                "camera": "*",
+                "microphone": "*"
+            }
+        }
+    ],
+    "resources": [
+        {
+            "files": [
+                "assets/**/*"
+            ]
         }
     ]
 }

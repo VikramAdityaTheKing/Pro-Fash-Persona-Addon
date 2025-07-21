@@ -1,51 +1,220 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta
-            name="description"
-            content="Get started with Add-on development using JavaScript with Document Sandbox Runtime"
-        />
-        <meta name="keywords" content="Adobe, Express, Add-On, JavaScript, Document Sandbox Runtime" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Get Started</title>
-        <style>
-            .container {
-                margin: 24px;
-                display: flex;
-                flex-direction: column;
-            }
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="Pro-Fash Professional Persona Creator Add-on For Adobe Express" />
+    <meta name="keywords" content="Adobe, Express, Add-On, JavaScript, Webcam, Persona, Video" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Persona Frame & Recorder</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; }
+        #canvasContainer { /* New container for canvas to size it */
+            position: relative;
+            width: 100%;
+            max-height: 60%; /* Adjust as needed */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #ccc;
+            background-color: #f0f0f0; /* Neutral background if no suit is chosen */
+        }
+        #canvasOutput { /* This is now the main display */
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+            /* No transform here, handled by JS drawing context */
+        }
+        #videoElement { display: none; } /* Raw video is hidden, used as source for canvas */
+        #suitOverlayImg { display: none; } /* Suit image is hidden, used as source for canvas */
+        #snapshotCanvas { display: none; } /* Hidden canvas for taking snapshots */
 
-            button {
-                background-color: rgb(82, 88, 228);
-                border-color: rgb(82, 88, 228);
-                border-radius: 16px;
-                border-style: solid;
-                color: rgb(255, 255, 255);
-                font-family: sans-serif;
-                height: 32px;
-            }
+        #controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 10px;
+            background: #eee;
+            align-items: flex-start;
+            gap: 10px;
+            overflow-y: auto;
+        }
+        #controls button, #controls select, #controls input[type="range"] {
+            margin: 0;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        #controls label {
+            font-size: 0.85em;
+            margin-right: 5px;
+            text-align: center;
+            width: 100%;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 5px;
+            border: 1px dashed #bbb;
+            padding: 5px;
+            min-width: 100px;
+        }
+        .control-group h4 {
+            margin-top: 0;
+            margin-bottom: 5px;
+            font-size: 1em;
+        }
+        #statusMessage { /* Status div for recording/snapshot */
+            margin-top: 5px;
+            font-size: 0.9em;
+            color: #555;
+            text-align: center;
+            min-height: 1.2em;
+        }
 
-            button:disabled {
-                background-color: rgb(177, 177, 177);
-                border-color: rgb(177, 177, 177);
-            }
+        #notesContainer { flex-grow: 1; padding: 10px; display: flex; flex-direction: column; }
+        #transcriptNotes { width: 98%; flex-grow: 1; border: 1px solid #ccc; padding: 5px; font-size: 14px; }
+        
+        /* Styles for the new gallery */
+        #mediaGallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            padding: 10px;
+            border-top: 1px solid #ccc;
+            margin-top: 10px;
+        }
+        .gallery-item {
+            position: relative;
+            border: 1px solid #ddd;
+            padding: 5px;
+            text-align: center;
+        }
+        .gallery-item img, .gallery-item video {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: auto;
+            border-radius: 4px;
+        }
+        .gallery-item .delete-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: rgba(255, 0, 0, 0.8);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.8em;
+            cursor: pointer;
+            line-height: 1;
+            text-align: center;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        }
+        .gallery-item .download-btn {
+            margin-top: 5px;
+            padding: 3px 5px;
+            font-size: 0.8em;
+            cursor: pointer;
+            background-color: #555be7;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        .gallery-info {
+            font-size: 0.7em;
+            color: #777;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvasContainer">
+        <canvas id="canvasOutput"></canvas>
+    </div>
 
-            button:not([disabled]):hover {
-                background-color: rgb(64, 70, 202);
-                cursor: pointer;
-            }
-        </style>
-    </head>
-    <body>
-        <!-- 
-            Please note that this document does not use the spectrum web components theme for Express.
-            You may use "addOnUISdk.app.ui.theme" to get the current theme and style accordingly.
-        -->
-        <div class="container">
-            <button id="createRectangle" disabled>Create Rectangle</button>
+    <video id="videoElement" autoplay playsinline></video>
+    <img id="suitOverlayImg" src="" alt="Professional Suit">
+    <canvas id="snapshotCanvas"></canvas>
+
+    <div id="controls">
+        <select id="suitSelector">
+            <option value="">Select Suit</option>
+            <option value="male_sitting">Male Sitting</option>
+            <option value="male_standing">Male Standing</option>
+            <option value="female_sitting">Female Sitting</option>
+            <option value="female_standing">Female Standing</option>
+        </select>
+        <button id="flipBtn">Flip Display</button>
+
+        <details class="control-group"> <summary><h4>Face Settings (Advanced)</h4></summary>
+            <div style="display: flex; flex-direction: column; width: 100%;">
+                <label for="srcX">Src X Pos (%)</label>
+                <input type="range" id="srcX" min="0" max="100" step="1" value="30">
+            </div>
+            <div style="display: flex; flex-direction: column; width: 100%;">
+                <label for="srcY">Src Y Pos (%)</label>
+                <input type="range" id="srcY" min="0" max="100" step="1" value="20">
+            </div>
+            <div style="display: flex; flex-direction: column; width: 100%;">
+                <label for="srcW">Src Width (%)</label>
+                <input type="range" id="srcW" min="10" max="100" step="1" value="40">
+            </div>
+            <div style="display: flex; flex-direction: column; width: 100%;">
+                <label for="srcH">Src Height (%)</label>
+                <input type="range" id="srcH" min="10" max="100" step="1" value="50">
+            </div>
+            <div style="display: flex; flex-direction: column; width: 100%;">
+                <label for="destX">Dest X Pos (px)</label>
+                <input type="range" id="destX" min="-500" max="500" step="1" value="0">
+            </div>
+            <div style="display: flex; flex-direction: column; width: 100%;">
+                <label for="destY">Dest Y Pos (px)</label>
+                <input type="range" id="destY" min="-500" max="500" step="1" value="0">
+            </div>
+            <div style="display: flex; flex-direction: column; width: 100%;">
+                <label for="faceOvalScale">Overall Scale</label>
+                <input type="range" id="faceOvalScale" min="0.1" max="2.0" step="0.01" value="1.0">
+            </div>
+        </details>
+
+        <details class="control-group"> <summary><h4>Suit Settings (Advanced)</h4></summary>
+            <div style="display: flex; flex-direction: column; width: 100%;">
+                <label for="suitScaleSlider">Scale</label>
+                <input type="range" id="suitScaleSlider" min="0.5" max="2.0" step="0.01" value="1.0">
+            </div>
+            <div style="display: flex; flex-direction: column; width: 100%;">
+                <label for="suitXOffsetSlider">X Offset</label>
+                <input type="range" id="suitXOffsetSlider" min="-500" max="500" step="1" value="0">
+            </div>
+            <div style="display: flex; flex-direction: column; width: 100%;">
+                <label for="suitYOffsetSlider">Y Offset</label>
+                <input type="range" id="suitYOffsetSlider" min="-500" max="500" step="1" value="0">
+            </div>
+        </details>
+
+        <button id="takeSnapshotBtn">Take Snapshot</button>
+        <button id="startRecordingBtn">Start Record</button>
+        <button id="stopRecordingBtn" disabled>Stop Record</button>
+        <button id="clearRecordingBtn" disabled>Clear Record</button>
+        <button id="downloadAllLocalBtn" disabled>Download All Media Locally</button>
+        <div id="statusMessage"></div>
+        <div id="dragInfo">Drag **image** thumbnails to canvas to add them! Video drag/add is not supported by Express.</div>
+    </div>
+
+    <div id="notesContainer">
+        <h3>Voice Notes:</h3>
+        <textarea id="transcriptNotes" placeholder="Transcription will appear here..." contenteditable="true"></textarea>
+    </div>
+
+    <div id="mediaGallery">
         </div>
-
-        <script type="module" src="ui/index.js"></script>
-    </body>
+    
+    <script type="module" src="ui/index.js"></script> 
+</body>
 </html>
