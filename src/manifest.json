@@ -23,10 +23,17 @@
             }
         }
     ],
+<<<<<<< HEAD
     "resources": [
         {
             "files": [
                 "assets/**/*"
+=======
+     "resources": [  
+        {
+            "files": [
+                "assets/**/*" 
+>>>>>>> d0324c558f25956a19930d98f8d0a9ac974cf60e
             ]
         }
     ]

@@ -2,20 +2,30 @@
 <html>
 <head>
     <meta charset="UTF-8" />
+<<<<<<< HEAD
     <meta name="description" content="Pro-Fash Professional Persona Creator Add-on For Adobe Express" />
+=======
+    <meta name="description" content="Profeshh! - Professional Persona Recorder Adobe Express Add-on" />
+>>>>>>> d0324c558f25956a19930d98f8d0a9ac974cf60e
     <meta name="keywords" content="Adobe, Express, Add-On, JavaScript, Webcam, Persona, Video" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Persona Frame & Recorder</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; }
+<<<<<<< HEAD
         #canvasContainer { /* New container for canvas to size it */
             position: relative;
+=======
+        #canvasContainer {
+            position: relative; /* For positioning control panel over canvas */
+>>>>>>> d0324c558f25956a19930d98f8d0a9ac974cf60e
             width: 100%;
             max-height: 60%; /* Adjust as needed */
             display: flex;
             justify-content: center;
             align-items: center;
             border: 1px solid #ccc;
+<<<<<<< HEAD
             background-color: #f0f0f0; /* Neutral background if no suit is chosen */
         }
         #canvasOutput { /* This is now the main display */
@@ -23,6 +33,14 @@
             height: auto;
             object-fit: contain;
             /* No transform here, handled by JS drawing context */
+=======
+            background-color: #f0f0f0;
+        }
+        #canvasOutput {
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+>>>>>>> d0324c558f25956a19930d98f8d0a9ac974cf60e
         }
         #videoElement { display: none; } /* Raw video is hidden, used as source for canvas */
         #suitOverlayImg { display: none; } /* Suit image is hidden, used as source for canvas */
@@ -34,26 +52,38 @@
             justify-content: center;
             padding: 10px;
             background: #eee;
+<<<<<<< HEAD
             align-items: flex-start;
             gap: 10px;
             overflow-y: auto;
         }
         #controls button, #controls select, #controls input[type="range"] {
             margin: 0;
+=======
+            align-items: center; /* Vertically align items */
+            gap: 10px; /* Space between controls */
+        }
+        #controls button, #controls select, #controls input[type="range"] {
+            margin: 0; /* Remove default margin */
+>>>>>>> d0324c558f25956a19930d98f8d0a9ac974cf60e
             padding: 8px 12px;
             cursor: pointer;
         }
         #controls label {
             font-size: 0.85em;
             margin-right: 5px;
+<<<<<<< HEAD
             text-align: center;
             width: 100%;
+=======
+>>>>>>> d0324c558f25956a19930d98f8d0a9ac974cf60e
         }
         .control-group {
             display: flex;
             flex-direction: column;
             align-items: center;
             margin: 0 5px;
+<<<<<<< HEAD
             border: 1px dashed #bbb;
             padding: 5px;
             min-width: 100px;
@@ -69,10 +99,13 @@
             color: #555;
             text-align: center;
             min-height: 1.2em;
+=======
+>>>>>>> d0324c558f25956a19930d98f8d0a9ac974cf60e
         }
 
         #notesContainer { flex-grow: 1; padding: 10px; display: flex; flex-direction: column; }
         #transcriptNotes { width: 98%; flex-grow: 1; border: 1px solid #ccc; padding: 5px; font-size: 14px; }
+<<<<<<< HEAD
         
         /* Styles for the new gallery */
         #mediaGallery {
@@ -131,6 +164,8 @@
             color: #777;
             margin-top: 5px;
         }
+=======
+>>>>>>> d0324c558f25956a19930d98f8d0a9ac974cf60e
     </style>
 </head>
 <body>
@@ -139,10 +174,14 @@
     </div>
 
     <video id="videoElement" autoplay playsinline></video>
+<<<<<<< HEAD
     <img id="suitOverlayImg" src="" alt="Professional Suit">
     <canvas id="snapshotCanvas"></canvas>
 
     <div id="controls">
+=======
+    <img id="suitOverlayImg" src="" alt="Professional Suit"> <canvas id="snapshotCanvas"></canvas> <div id="controls">
+>>>>>>> d0324c558f25956a19930d98f8d0a9ac974cf60e
         <select id="suitSelector">
             <option value="">Select Suit</option>
             <option value="male_sitting">Male Sitting</option>
@@ -150,6 +189,7 @@
             <option value="female_sitting">Female Sitting</option>
             <option value="female_standing">Female Standing</option>
         </select>
+<<<<<<< HEAD
         <button id="flipBtn">Flip Display</button>
 
         <details class="control-group"> <summary><h4>Face Settings (Advanced)</h4></summary>
@@ -218,3 +258,31 @@
     <script type="module" src="ui/index.js"></script> 
 </body>
 </html>
+=======
+        <button id="flipBtn">Flip Direction</button>
+
+        <div class="control-group">
+            <label for="scaleSlider">Scale Face</label>
+            <input type="range" id="scaleSlider" min="0.5" max="1.5" step="0.01" value="1.0">
+        </div>
+        <div class="control-group">
+            <label for="yOffsetSlider">Y Offset</label>
+            <input type="range" id="yOffsetSlider" min="-100" max="100" step="1" value="0">
+        </div>
+
+        <button id="takeSnapshotBtn">Take Snapshot</button>
+        <button id="startRecordingBtn">Start Record</button>
+        <button id="stopRecordingBtn" disabled>Stop Record</button>
+        <button id="addMediaToExpressBtn">Add Media to Express</button>
+        <button id="startTranscriptionBtn">Start Voice Notes</button>
+        <button id="stopTranscriptionBtn" disabled>Stop Voice Notes</button>
+    </div>
+    <div id="notesContainer">
+        <h3>Voice Notes:</h3>
+        <textarea id="transcriptNotes" placeholder="Transcription will appear here..." contenteditable="true"></textarea>
+    </div>
+
+    <script type="module" src="ui/index.js"></script> 
+</body>
+</html>
+>>>>>>> d0324c558f25956a19930d98f8d0a9ac974cf60e
